@@ -27,9 +27,6 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Atlas Connected"))
   .catch(err => console.log(err));
 
-.then(()=>console.log("MongoDB Connected"))
-.catch(err=>console.log(err));
-
 /* REGISTER */
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
@@ -83,4 +80,5 @@ app.delete("/books/:id", authMiddleware, async(req,res)=>{
 });
 
 app.listen(PORT,()=>console.log(`Server running at http://localhost:${PORT}`));
+
 
