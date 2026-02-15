@@ -1,39 +1,61 @@
-const api = "http://localhost:3000";
+const api="http://localhost:3000";
 
-/* Loader */
-window.addEventListener("load", function() {
-  const loader = document.getElementById("loader");
-  if(loader) loader.style.display = "none";
+/* REGISTER */
+function register(){
+fetch(`${api}/register`,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+name:name.value,
+email:email.value,
+password:password.value
+})
+}).then(res=>res.text())
+.then(msg=>{
+alert(msg);
+if(msg==="Registration successful")
+window.location.href="index.html";
 });
+}
 
-/* Route Protection */
-document.addEventListener("DOMContentLoaded", function() {
-  const protectedPages = ["crud.html"];
-  const currentPage = window.location.pathname.split("/").pop();
-  const token = localStorage.getItem("token");
-
-  if (protectedPages.includes(currentPage) && !token) {
-    alert("Please login first");
-    window.location.href = "login.html";
-  }
-
-  const registerLink = document.getElementById("registerLink");
-  const loginLink = document.getElementById("loginLink");
-  const profileSection = document.getElementById("profileSection");
-  const usernameDisplay = document.getElementById("usernameDisplay");
-
-  if(token){
-    if(registerLink) registerLink.style.display = "none";
-    if(loginLink) loginLink.style.display = "none";
-    if(profileSection){
-      profileSection.style.display = "block";
-      usernameDisplay.innerText = localStorage.getItem("username");
-    }
-  }
+/* LOGIN */
+function login(){
+fetch(`${api}/login`,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+email:loginEmail.value,
+password:loginPassword.value
+})
+}).then(res=>res.json())
+.then(data=>{
+if(data.token){
+localStorage.setItem("token",data.token);
+localStorage.setItem("username",data.name);
+window.location.href="index.html";
+}
 });
+}
 
-/* Logout */
+/* LOGOUT */
 function logout(){
 localStorage.clear();
 window.location.href="index.html";
 }
+
+/* Header Control */
+document.addEventListener("DOMContentLoaded",()=>{
+const token=localStorage.getItem("token");
+
+const registerLink=document.getElementById("registerLink");
+const loginLink=document.getElementById("loginLink");
+const manageLink=document.getElementById("manageLink");
+const logoutLink=document.getElementById("logoutLink");
+
+if(token){
+if(registerLink) registerLink.style.display="none";
+if(loginLink) loginLink.style.display="none";
+if(manageLink) manageLink.style.display="inline";
+if(logoutLink) logoutLink.style.display="inline";
+}
+});
