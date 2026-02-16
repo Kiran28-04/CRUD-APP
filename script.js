@@ -2,63 +2,75 @@ const api = "https://crud-app-5v1l.onrender.com";
 
 /* ================= REGISTER ================= */
 
-function register() {
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+const registerForm = document.getElementById("registerForm");
 
-  if (!name || !email || !password) {
-    alert("All fields are required");
-    return;
-  }
+if (registerForm) {
+  registerForm.addEventListener("submit", function (e) {
+    e.preventDefault();
 
-  fetch(`${api}/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password })
-  })
-    .then(res => res.text())
-    .then(msg => {
-      alert(msg);
-      if (msg === "Registration successful") {
-        window.location.href = "index.html";
-      }
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!name || !email || !password) {
+      alert("All fields are required");
+      return;
+    }
+
+    fetch(`${api}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
     })
-    .catch(err => {
-      console.error(err);
-      alert("Server error");
-    });
+      .then(res => res.text())
+      .then(msg => {
+        alert(msg);
+        if (msg === "Registration successful") {
+          window.location.href = "login.html";
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Server error");
+      });
+  });
 }
 
 /* ================= LOGIN ================= */
 
-function login() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
+const loginForm = document.getElementById("loginForm");
 
-  if (!email || !password) {
-    alert("All fields are required");
-    return;
-  }
+if (loginForm) {
+  loginForm.addEventListener("submit", function (e) {
+    e.preventDefault();
 
-  fetch(`${api}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        window.location.href = "crud.html";
-      } else {
-        alert("Invalid login credentials");
-      }
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+
+    if (!email || !password) {
+      alert("All fields are required");
+      return;
+    }
+
+    fetch(`${api}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
     })
-    .catch(err => {
-      console.error(err);
-      alert("Server error");
-    });
+      .then(res => res.json())
+      .then(data => {
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          window.location.href = "crud.html";
+        } else {
+          alert("Invalid login credentials");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Server error");
+      });
+  });
 }
 
 /* ================= ADD BOOK ================= */
@@ -132,9 +144,7 @@ function loadBooks() {
         `;
       });
     })
-    .catch(err => {
-      console.error(err);
-    });
+    .catch(err => console.error(err));
 }
 
 /* ================= DELETE BOOK ================= */
@@ -152,7 +162,7 @@ function deleteBook(id) {
     .catch(err => console.error(err));
 }
 
-/* ================= AUTO LOAD BOOKS ================= */
+/* ================= AUTO LOAD ================= */
 
 window.onload = function () {
   if (document.getElementById("bookList")) {
