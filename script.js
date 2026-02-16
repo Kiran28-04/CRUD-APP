@@ -51,85 +51,93 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ================= REGISTER ================= */
 
-async function register() {
+function register() {
   const name = getValue("name");
   const email = getValue("email");
   const password = getValue("password");
 
   if (!name || !email || !password) {
-    return Swal.fire("Error", "All fields required", "error");
+    Swal.fire("Error", "All fields are required", "error");
+    return;
   }
 
   showLoader();
 
-  try {
-    const res = await fetch(`${api}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password })
+  fetch(`${api}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  })
+    .then(res => res.text())
+    .then(msg => {
+      hideLoader();
+
+      if (msg === "Registration successful") {
+        Swal.fire({
+          title: "Registered Successfully!",
+          icon: "success",
+          timer: 1200,
+          showConfirmButton: false
+        });
+
+        setTimeout(() => {
+          window.location.href = "login.html";
+        }, 1200);
+      } else {
+        Swal.fire("Error", msg, "error");
+      }
+    })
+    .catch(() => {
+      hideLoader();
+      Swal.fire("Error", "Server error", "error");
     });
-
-    const text = await res.text();
-    hideLoader();
-
-    if (res.ok) {
-      Swal.fire("Success", text, "success")
-        .then(() => window.location.href = "login.html");
-    } else {
-      Swal.fire("Error", text, "error");
-    }
-
-  } catch {
-    hideLoader();
-    Swal.fire("Error", "Server error", "error");
-  }
 }
 
 /* ================= LOGIN ================= */
 
-async function login() {
+function login() {
   const email = getValue("loginEmail");
   const password = getValue("loginPassword");
 
   if (!email || !password) {
-    return Swal.fire("Error", "All fields required", "error");
+    Swal.fire("Error", "All fields required", "error");
+    return;
   }
 
   showLoader();
 
-  try {
-    const res = await fetch(`${api}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+  fetch(`${api}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  })
+    .then(res => res.json())
+    .then(data => {
+      hideLoader();
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", data.name);
+
+        Swal.fire({
+          title: "Welcome!",
+          icon: "success",
+          timer: 1200,
+          showConfirmButton: false
+        });
+
+        setTimeout(() => {
+          window.location.href = "crud.html";
+        }, 1200);
+
+      } else {
+        Swal.fire("Error", "Invalid login credentials", "error");
+      }
+    })
+    .catch(() => {
+      hideLoader();
+      Swal.fire("Error", "Server error", "error");
     });
-
-    const data = await res.json();
-    hideLoader();
-
-    if (res.ok && data.token) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("username", data.name);
-
-      Swal.fire({
-        icon: "success",
-        title: "Welcome!",
-        timer: 1200,
-        showConfirmButton: false
-      });
-
-      setTimeout(() => {
-        window.location.href = "crud.html";
-      }, 1200);
-
-    } else {
-      Swal.fire("Error", data.message || "Invalid credentials", "error");
-    }
-
-  } catch {
-    hideLoader();
-    Swal.fire("Error", "Server error", "error");
-  }
 }
 
 /* ================= LOGOUT ================= */
@@ -141,51 +149,61 @@ function logout() {
 
 /* ================= LOAD BOOKS ================= */
 
-async function loadBooks() {
+function loadBooks() {
   showLoader();
   const token = localStorage.getItem("token");
 
-  try {
-    const res = await fetch(`${api}/books`, {
-      headers: { "Authorization": "Bearer " + token }
-    });
+  fetch(`${api}/books`, {
+    headers: { "Authorization": "Bearer " + token }
+  })
+    .then(res => res.json())
+    .then(data => {
+      hideLoader();
 
-    const data = await res.json();
-    hideLoader();
+      const table = document.getElementById("bookTable");
+      if (!table) return;
 
-    const table = document.getElementById("bookTable");
-    table.innerHTML = "";
+      table.innerHTML = "";
 
-    data.forEach(book => {
-      table.innerHTML += `
-        <tr>
+      data.forEach(book => {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
           <td>${book.bookName}</td>
           <td>${book.author}</td>
           <td>${book.genre}</td>
           <td>${book.price}</td>
           <td class="text-center">
-            <button class="btn btn-warning btn-sm me-2"
-              onclick="editBook('${book._id}','${book.bookName}','${book.author}','${book.genre}','${book.price}')">
-              Edit
+            <button class="btn btn-sm btn-warning me-2 edit-btn">
+              ✏ Edit
             </button>
-            <button class="btn btn-danger btn-sm"
-              onclick="deleteBook('${book._id}')">
-              Delete
+            <button class="btn btn-sm btn-danger delete-btn">
+              🗑 Delete
             </button>
           </td>
-        </tr>
-      `;
-    });
+        `;
 
-  } catch {
-    hideLoader();
-    Swal.fire("Error", "Unable to load books", "error");
-  }
+        row.querySelector(".edit-btn").addEventListener("click", () => {
+          editBook(book);
+        });
+
+        row.querySelector(".delete-btn").addEventListener("click", () => {
+          deleteBook(book._id);
+        });
+
+        table.appendChild(row);
+      });
+    })
+    .catch(() => {
+      hideLoader();
+      Swal.fire("Error", "Unable to load books", "error");
+    });
 }
 
-/* ================= ADD BOOK ================= */
+/* ================= ADD / UPDATE ================= */
 
-async function addBook() {
+function addBook() {
   const token = localStorage.getItem("token");
 
   const bookName = getValue("bookName");
@@ -194,34 +212,72 @@ async function addBook() {
   const price = getValue("price");
 
   if (!bookName || !author || !genre || !price) {
-    return Swal.fire("Error", "All fields required", "error");
+    Swal.fire("Error", "All fields required", "error");
+    return;
   }
 
   const data = { bookName, author, genre, price };
 
   showLoader();
 
-  try {
-    const res = await fetch(`${api}/books`, {
-      method: editId ? "PUT" : "POST",
+  if (editId) {
+
+    fetch(`${api}/books/${editId}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + token
       },
       body: JSON.stringify(data)
-    });
+    })
+      .then(res => res.text())
+      .then(() => {
+        editId = null;
+        clearForm();
+        hideLoader();
+        Swal.fire("Updated", "Book updated successfully", "success");
+        loadBooks();
+      })
+      .catch(() => {
+        hideLoader();
+        Swal.fire("Error", "Update failed", "error");
+      });
 
-    hideLoader();
-    clearForm();
-    editId = null;
+  } else {
 
-    Swal.fire("Success", "Saved successfully", "success");
-    loadBooks();
-
-  } catch {
-    hideLoader();
-    Swal.fire("Error", "Server error", "error");
+    fetch(`${api}/books`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(data)
+    })
+      .then(res => res.text())
+      .then(() => {
+        clearForm();
+        hideLoader();
+        Swal.fire("Success", "Book added successfully", "success");
+        loadBooks();
+      })
+      .catch(() => {
+        hideLoader();
+        Swal.fire("Error", "Add failed", "error");
+      });
   }
+}
+
+/* ================= EDIT ================= */
+
+function editBook(book) {
+  editId = book._id;
+
+  document.getElementById("bookName").value = book.bookName;
+  document.getElementById("author").value = book.author;
+  document.getElementById("genre").value = book.genre;
+  document.getElementById("price").value = book.price;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 /* ================= DELETE ================= */
@@ -233,120 +289,21 @@ function deleteBook(id) {
     title: "Are you sure?",
     icon: "warning",
     showCancelButton: true
-  }).then(async result => {
+  }).then(result => {
     if (result.isConfirmed) {
-      await fetch(`${api}/books/${id}`, {
+      fetch(`${api}/books/${id}`, {
         method: "DELETE",
         headers: { "Authorization": "Bearer " + token }
-      });
-
-      Swal.fire("Deleted!", "", "success");
-      loadBooks();
+      })
+        .then(() => {
+          Swal.fire("Deleted!", "Book removed", "success");
+          loadBooks();
+        });
     }
   });
 }
 
-/* ===== FORGOT PASSWORD ===== */
-
-function sendResetLink() {
-  const email = getValue("resetEmail");
-
-  if (!email) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Please enter your email"
-    });
-    return;
-  }
-
-  fetch(`${api}/forgot-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email })
-  })
-  .then(async res => {
-    const message = await res.text();
-
-    if (!res.ok) {
-      throw new Error(message);
-    }
-
-    return message;
-  })
-  .then(message => {
-    Swal.fire({
-      icon: "success",
-      title: "Email Sent",
-      text: message
-    }).then(() => {
-      window.location.href = "login.html";
-    });
-  })
-  .catch(err => {
-    Swal.fire({
-      icon: "error",
-      title: "Failed",
-      text: err.message || "Email sending failed"
-    });
-  });
-}
-
-
-/* ===== RESET PASSWORD ===== */
-
-function updatePassword() {
-  const newPassword = getValue("newPassword");
-
-  if (!newPassword) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Enter new password"
-    });
-    return;
-  }
-
-  const token = new URLSearchParams(window.location.search).get("token");
-
-  fetch(`${api}/reset-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, newPassword })
-  })
-  .then(async res => {
-    const message = await res.text();
-
-    if (!res.ok) {
-      throw new Error(message);
-    }
-
-    return message;
-  })
-  .then(message => {
-    Swal.fire({
-      icon: "success",
-      title: "Success",
-      text: message
-    }).then(() => {
-      window.location.href = "login.html";
-    });
-  })
-  .catch(err => {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: err.message || "Invalid or expired link"
-    });
-  });
-}
-
-/* ================= HELPER ================= */
-
-function getValue(id) {
-  const el = document.getElementById(id);
-  return el ? el.value.trim() : "";
-}
+/* ================= CLEAR FORM ================= */
 
 function clearForm() {
   document.getElementById("bookName").value = "";
@@ -355,3 +312,9 @@ function clearForm() {
   document.getElementById("price").value = "";
 }
 
+/* ================= HELPER ================= */
+
+function getValue(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : "";
+}
