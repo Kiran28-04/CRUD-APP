@@ -3,131 +3,65 @@
 <head>
   <title>Manage Books</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="loader">
-  <div class="spinner-border text-danger"></div>
-</div>
-
+<!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark custom-navbar fixed-top">
   <div class="container-fluid">
-    <a class="navbar-brand" href="index.html">Books <span>App</span></a>
-    <div class="ms-auto">
-      <span class="nav-link d-inline" id="usernameDisplay"></span>
-      <a class="nav-link d-inline" href="#" onclick="logout()">Logout</a>
+    <a class="navbar-brand" href="#">Books <span>App</span></a>
+
+    <div class="ms-auto d-flex align-items-center">
+      <span class="text-white me-3" id="usernameDisplay"></span>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
     </div>
   </div>
 </nav>
 
-<div class="container mt-5">
+<div class="container mt-5 pt-5">
 
-  <h3>Add Book</h3>
+  <div class="card bg-dark text-white p-4 mb-4">
+    <h3>Add / Edit Book</h3>
 
-  <input class="form-control mb-2" id="bookName" placeholder="Book Name">
-  <input class="form-control mb-2" id="author" placeholder="Author">
+    <input class="form-control mb-2" id="bookName" placeholder="Book Name">
+    <input class="form-control mb-2" id="author" placeholder="Author">
 
-  <select class="form-select mb-2" id="genre">
-    <option value="">Select Genre</option>
-    <option>Fiction</option>
-    <option>Non-Fiction</option>
-    <option>Science</option>
-    <option>Technology</option>
-    <option>Biography</option>
-  </select>
+    <select class="form-select mb-2" id="genre">
+      <option value="">Select Genre</option>
+      <option>Fiction</option>
+      <option>Non-Fiction</option>
+      <option>Science</option>
+      <option>Technology</option>
+      <option>Biography</option>
+    </select>
 
-  <input type="number" class="form-control mb-2" id="price" placeholder="Price">
+    <input type="number" class="form-control mb-2" id="price" placeholder="Price">
 
-  <button class="btn btn-success" onclick="addBook()">Add</button>
+    <button class="btn btn-success" onclick="addBook()">Save Book</button>
+  </div>
 
-  <hr>
+  <div class="card bg-dark text-white p-4">
+    <h3>All Books</h3>
 
-  <h3>All Books</h3>
-  <table class="table table-dark">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Author</th>
-        <th>Genre</th>
-        <th>Price</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="bookTable"></tbody>
-  </table>
+    <table class="table table-dark table-hover">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Author</th>
+          <th>Genre</th>
+          <th>Price</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="bookTable"></tbody>
+    </table>
+  </div>
 
 </div>
 
 <script src="script.js"></script>
-<script>
-const bookApi = "http://localhost:3000/books";
-let editId = null;
-
-function loadBooks(){
-fetch(bookApi)
-.then(res=>res.json())
-.then(data=>{
-  const table=document.getElementById("bookTable");
-  table.innerHTML="";
-  data.forEach(book=>{
-    table.innerHTML+=`
-      <tr>
-        <td>${book.bookName}</td>
-        <td>${book.author}</td>
-        <td>${book.genre}</td>
-        <td>${book.price}</td>
-        <td>
-          <button class="btn btn-warning btn-sm" onclick="editBook('${book._id}','${book.bookName}','${book.author}','${book.genre}','${book.price}')">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteBook('${book._id}')">Delete</button>
-        </td>
-      </tr>`;
-  });
-});
-}
-
-function addBook(){
-const data={
-  bookName:bookName.value,
-  author:author.value,
-  genre:genre.value,
-  price:price.value
-};
-
-if(editId){
-  fetch(`${bookApi}/${editId}`,{
-    method:"PUT",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
-  }).then(()=>{ editId=null; loadBooks(); });
-}else{
-  fetch(bookApi,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
-  }).then(()=>loadBooks());
-}
-}
-
-function editBook(id,name,auth,gen,pr){
-editId=id;
-bookName.value=name;
-author.value=auth;
-genre.value=gen;
-price.value=pr;
-}
-
-function deleteBook(id){
-fetch(`${bookApi}/${id}`,{method:"DELETE"})
-.then(()=>loadBooks());
-}
-
-loadBooks();
-</script>
-
 </body>
 </html>
-
-
-
