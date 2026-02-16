@@ -103,13 +103,18 @@ app.post("/forgot-password", async (req, res) => {
       from: `"Books App" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Password Reset",
-      html: `<a href="${resetLink}">Click here to reset password</a>`
+      html: `
+        <h2>Password Reset</h2>
+        <p>Click below to reset your password:</p>
+        <a href="${resetLink}">${resetLink}</a>
+        <p>This link expires in 15 minutes.</p>
+      `
     });
 
     res.send("Reset link sent successfully");
 
   } catch (err) {
-    console.log(err);
+    console.log("EMAIL ERROR:", err);
     res.status(500).send("Email sending failed");
   }
 });
@@ -159,3 +164,4 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => console.log("Server running on port", PORT));
+
