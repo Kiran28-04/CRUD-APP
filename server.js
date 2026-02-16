@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
-const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
 const User = require("./models/User");
@@ -13,34 +12,25 @@ const authMiddleware = require("./middleware/auth");
 
 const app = express();
 
-/* ================= CORS ================= */
-
+/* ===== CORS ===== */
 app.use(cors({
   origin: [
     "https://kiran28-04.github.io",
     "http://localhost:3000"
   ],
-  methods: ["GET", "POST", "DELETE", "PUT"]
+  methods: ["GET", "POST", "PUT", "DELETE"],
 }));
 
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-/* ================= MongoDB ================= */
-
+/* ===== MongoDB ===== */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log("MongoDB Error:", err));
 
-/* ================= HOME ================= */
-
-app.get("/", (req, res) => {
-  res.send("CRUD API is running successfully 🚀");
-});
-
-/* ================= REGISTER ================= */
-
+/* ===== REGISTER ===== */
 app.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -53,13 +43,11 @@ app.post("/register", async (req, res) => {
 
     res.send("Registration successful");
   } catch (err) {
-    console.log(err);
     res.status(500).send("Server error");
   }
 });
 
-/* ================= LOGIN ================= */
-
+/* ===== LOGIN ===== */
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -79,25 +67,26 @@ app.post("/login", async (req, res) => {
     res.json({ token, name: user.name });
 
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ================= FORGOT PASSWORD ================= */
-
+/* ===== FORGOT PASSWORD ===== */
 app.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).send("User not found");
+    if (!user) return res.status(400).send("Email not registered");
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
 
-    user.resetToken = resetToken;
-    user.resetTokenExpire = Date.now() + 3600000; // 1 hour
-    await user.save();
+    const resetLink =
+      `https://kiran28-04.github.io/CRUD-APP/reset.html?token=${token}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -107,101 +96,69 @@ app.post("/forgot-password", async (req, res) => {
       }
     });
 
-    const resetURL = `https://kiran28-04.github.io/CRUD-APP/reset.html?token=${resetToken}`;
-
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "Password Reset - Books App",
+      subject: "Password Reset Link",
       html: `
         <h3>Password Reset</h3>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetURL}">${resetURL}</a>
-        <p>This link expires in 1 hour.</p>
+        <p>Click below to reset password:</p>
+        <a href="${resetLink}">${resetLink}</a>
       `
     });
 
     res.send("Reset link sent successfully");
 
   } catch (err) {
-    console.log("Forgot Error:", err);
+    console.log(err);
     res.status(500).send("Email sending failed");
   }
 });
 
-/* ================= RESET PASSWORD ================= */
-
-app.post("/reset-password/:token", async (req, res) => {
+/* ===== RESET PASSWORD ===== */
+app.post("/reset-password", async (req, res) => {
   try {
-    const { password } = req.body;
+    const { token, newPassword } = req.body;
 
-    const user = await User.findOne({
-      resetToken: req.params.token,
-      resetTokenExpire: { $gt: Date.now() }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await User.findByIdAndUpdate(decoded.id, {
+      password: hashed
     });
 
-    if (!user) return res.status(400).send("Invalid or expired token");
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    user.password = hashed;
-    user.resetToken = undefined;
-    user.resetTokenExpire = undefined;
-
-    await user.save();
-
-    res.send("Password reset successful");
+    res.send("Password updated successfully");
 
   } catch (err) {
-    console.log("Reset Error:", err);
-    res.status(500).send("Reset failed");
+    res.status(400).send("Invalid or expired token");
   }
 });
 
-/* ================= ADD BOOK ================= */
+/* ===== BOOK ROUTES ===== */
 
 app.post("/books", authMiddleware, async (req, res) => {
-  try {
-    await new Book(req.body).save();
-    res.send("Book added");
-  } catch (err) {
-    res.status(500).send("Server error");
-  }
+  await new Book(req.body).save();
+  res.send("Book added");
 });
-
-/* ================= UPDATE BOOK ================= */
-
-app.put("/books/:id", authMiddleware, async (req, res) => {
-  try {
-    await Book.findByIdAndUpdate(req.params.id, req.body);
-    res.send("Book updated");
-  } catch (err) {
-    res.status(500).send("Server error");
-  }
-});
-
-/* ================= GET BOOKS ================= */
 
 app.get("/books", authMiddleware, async (req, res) => {
-  try {
-    const books = await Book.find();
-    res.json(books);
-  } catch (err) {
-    res.status(500).send("Server error");
-  }
+  const books = await Book.find();
+  res.json(books);
 });
 
-/* ================= DELETE BOOK ================= */
+app.put("/books/:id", authMiddleware, async (req, res) => {
+  await Book.findByIdAndUpdate(req.params.id, req.body);
+  res.send("Updated");
+});
 
 app.delete("/books/:id", authMiddleware, async (req, res) => {
-  try {
-    await Book.findByIdAndDelete(req.params.id);
-    res.send("Deleted");
-  } catch (err) {
-    res.status(500).send("Server error");
-  }
+  await Book.findByIdAndDelete(req.params.id);
+  res.send("Deleted");
 });
 
-/* ================= START SERVER ================= */
+app.get("/", (req, res) => {
+  res.send("CRUD API is running 🚀");
+});
 
 app.listen(PORT, () => console.log("Server running on port", PORT));
