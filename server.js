@@ -12,13 +12,11 @@ const authMiddleware = require("./middleware/auth");
 
 const app = express();
 
-/* ===== CORS ===== */
+/* ===== FINAL CORS CONFIG ===== */
 app.use(cors({
-  origin: [
-    "https://kiran28-04.github.io",
-    "http://localhost:3000"
-  ],
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 app.use(express.json());
@@ -162,3 +160,4 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => console.log("Server running on port", PORT));
+
