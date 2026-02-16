@@ -2,81 +2,70 @@ const api = "https://crud-app-5v1l.onrender.com";
 
 /* ================= REGISTER ================= */
 
-const registerForm = document.getElementById("registerForm");
+function register() {
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-if (registerForm) {
-  registerForm.addEventListener("submit", function (e) {
-    e.preventDefault();
+  if (!name || !email || !password) {
+    alert("All fields are required");
+    return;
+  }
 
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!name || !email || !password) {
-      alert("All fields are required");
-      return;
-    }
-
-    fetch(`${api}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password })
+  fetch(`${api}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  })
+    .then(res => res.text())
+    .then(msg => {
+      alert(msg);
+      if (msg === "Registration successful") {
+        window.location.href = "login.html";
+      }
     })
-      .then(res => res.text())
-      .then(msg => {
-        alert(msg);
-        if (msg === "Registration successful") {
-          window.location.href = "login.html";
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Server error");
-      });
-  });
+    .catch(err => {
+      console.error(err);
+      alert("Server error");
+    });
 }
 
 /* ================= LOGIN ================= */
 
-const loginForm = document.getElementById("loginForm");
+function login() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
 
-if (loginForm) {
-  loginForm.addEventListener("submit", function (e) {
-    e.preventDefault();
+  if (!email || !password) {
+    alert("All fields are required");
+    return;
+  }
 
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value.trim();
-
-    if (!email || !password) {
-      alert("All fields are required");
-      return;
-    }
-
-    fetch(`${api}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+  fetch(`${api}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        window.location.href = "crud.html";
+      } else {
+        alert("Invalid login credentials");
+      }
     })
-      .then(res => res.json())
-      .then(data => {
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          window.location.href = "crud.html";
-        } else {
-          alert("Invalid login credentials");
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Server error");
-      });
-  });
+    .catch(err => {
+      console.error(err);
+      alert("Server error");
+    });
 }
 
 /* ================= ADD BOOK ================= */
 
 function addBook() {
   const token = localStorage.getItem("token");
+
   if (!token) {
     alert("Please login first");
     window.location.href = "login.html";
@@ -147,7 +136,7 @@ function loadBooks() {
     .catch(err => console.error(err));
 }
 
-/* ================= DELETE BOOK ================= */
+/* ================= DELETE ================= */
 
 function deleteBook(id) {
   const token = localStorage.getItem("token");
