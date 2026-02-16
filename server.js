@@ -103,3 +103,7 @@ app.delete("/books/:id", authMiddleware, async (req, res) => {
 });
 
 app.listen(PORT, () => console.log("Server running on port", PORT));
+
+app.get("/", (req, res) => {
+  res.send("CRUD API is running successfully 🚀");
+});
