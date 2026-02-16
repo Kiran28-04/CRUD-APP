@@ -304,68 +304,54 @@ function getValue(id) {
 }
 
 
-function forgotPassword() {
-  const email = getValue("forgotEmail");
+/* ===== FORGOT PASSWORD ===== */
+
+function sendResetLink() {
+  const email = getValue("resetEmail");
 
   if (!email) {
     Swal.fire("Error", "Enter your email", "error");
     return;
   }
 
-  showLoader();
-
   fetch(`${api}/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email })
   })
-    .then(res => res.text())
-    .then(msg => {
-      hideLoader();
-
-      Swal.fire({
-        title: "Success",
-        text: msg,
-        icon: "success"
-      }).then(() => {
-        window.location.href = "login.html";   // 🔥 Redirect after message
-      });
-    })
-    .catch(() => {
-      hideLoader();
-      Swal.fire("Error", "Server error", "error");
-    });
-}
-
-
-
-function resetPassword() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
-  const password = getValue("newPassword");
-
-  if (!password) {
-    Swal.fire("Error", "Enter new password", "error");
-    return;
-  }
-
-  showLoader();
-
-  fetch(`${api}/reset-password/${token}`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ password })
-  })
   .then(res => res.text())
   .then(msg => {
-    hideLoader();
-    Swal.fire("Success", msg, "success").then(() => {
-      window.location.href = "login.html";
-    });
+    Swal.fire("Success", msg, "success")
+      .then(() => window.location.href = "login.html");
   })
   .catch(() => {
-    hideLoader();
     Swal.fire("Error", "Server error", "error");
   });
 }
 
+/* ===== RESET PASSWORD ===== */
+
+function updatePassword() {
+  const newPassword = getValue("newPassword");
+
+  if (!newPassword) {
+    Swal.fire("Error", "Enter new password", "error");
+    return;
+  }
+
+  const token = new URLSearchParams(window.location.search).get("token");
+
+  fetch(`${api}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, newPassword })
+  })
+  .then(res => res.text())
+  .then(msg => {
+    Swal.fire("Success", msg, "success")
+      .then(() => window.location.href = "login.html");
+  })
+  .catch(() => {
+    Swal.fire("Error", "Invalid or expired link", "error");
+  });
+}
