@@ -1,4 +1,23 @@
 const api = "https://crud-app-5v1l.onrender.com";
+let editId = null;
+
+/* ================= AUTH CHECK ================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+  const token = localStorage.getItem("token");
+
+  if (window.location.pathname.includes("crud.html")) {
+    if (!token) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    document.getElementById("usernameDisplay").innerText =
+      "Welcome";
+
+    loadBooks();
+  }
+});
 
 /* ================= REGISTER ================= */
 
@@ -21,36 +40,28 @@ function register() {
     .then(msg => {
       alert(msg);
       if (msg === "Registration successful") {
-        window.location.href = "login.html";
+        window.location.href = "crud.html";
       }
     })
-    .catch(err => {
-      console.error(err);
-      alert("Server error");
-    });
+    .catch(() => alert("Server error"));
 }
 
 /* ================= LOGIN ================= */
 
-const loginForm = document.getElementById("loginForm");
+function login() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
 
-if (loginForm) {
-  loginForm.addEventListener("submit", function(e) {
-    e.preventDefault();
+  if (!email || !password) {
+    alert("All fields are required");
+    return;
+  }
 
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value.trim();
-
-    if (!email || !password) {
-      alert("All fields are required");
-      return;
-    }
-
-    fetch(`${api}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    })
+  fetch(`${api}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  })
     .then(res => res.json())
     .then(data => {
       if (data.token) {
@@ -60,58 +71,20 @@ if (loginForm) {
         alert("Invalid login credentials");
       }
     })
-    .catch(err => {
-      console.error(err);
-      alert("Server error");
-    });
-  });
+    .catch(() => alert("Server error"));
 }
 
-/* ================= ADD BOOK ================= */
+/* ================= LOGOUT ================= */
 
-function addBook() {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    alert("Please login first");
-    window.location.href = "login.html";
-    return;
-  }
-
-  const bookName = document.getElementById("bookName").value.trim();
-  const author = document.getElementById("author").value.trim();
-  const genre = document.getElementById("genre").value;
-  const price = document.getElementById("price").value.trim();
-
-  if (!bookName || !author || !genre || !price) {
-    alert("All fields are required");
-    return;
-  }
-
-  fetch(`${api}/books`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
-    },
-    body: JSON.stringify({ bookName, author, genre, price })
-  })
-    .then(res => res.text())
-    .then(msg => {
-      alert(msg);
-      loadBooks();
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Server error");
-    });
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
 }
 
 /* ================= LOAD BOOKS ================= */
 
 function loadBooks() {
   const token = localStorage.getItem("token");
-  if (!token) return;
 
   fetch(`${api}/books`, {
     headers: {
@@ -120,26 +93,78 @@ function loadBooks() {
   })
     .then(res => res.json())
     .then(data => {
-      const list = document.getElementById("bookList");
-      if (!list) return;
+      const table = document.getElementById("bookTable");
+      table.innerHTML = "";
 
-      list.innerHTML = "";
-
-      data.forEach(b => {
-        list.innerHTML += `
-        <tr>
-          <td>${b.bookName}</td>
-          <td>${b.author}</td>
-          <td>${b.genre}</td>
-          <td>${b.price}</td>
-          <td>
-            <button onclick="deleteBook('${b._id}')">Delete</button>
-          </td>
-        </tr>
-        `;
+      data.forEach(book => {
+        table.innerHTML += `
+          <tr>
+            <td>${book.bookName}</td>
+            <td>${book.author}</td>
+            <td>${book.genre}</td>
+            <td>${book.price}</td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="editBook('${book._id}','${book.bookName}','${book.author}','${book.genre}','${book.price}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteBook('${book._id}')">Delete</button>
+            </td>
+          </tr>`;
       });
-    })
-    .catch(err => console.error(err));
+    });
+}
+
+/* ================= ADD / UPDATE BOOK ================= */
+
+function addBook() {
+  const token = localStorage.getItem("token");
+
+  const bookName = document.getElementById("bookName").value;
+  const author = document.getElementById("author").value;
+  const genre = document.getElementById("genre").value;
+  const price = document.getElementById("price").value;
+
+  if (!bookName || !author || !genre || !price) {
+    alert("All fields required");
+    return;
+  }
+
+  const data = { bookName, author, genre, price };
+
+  if (editId) {
+    fetch(`${api}/books/${editId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(data)
+    }).then(() => {
+      editId = null;
+      document.getElementById("bookBtn").innerText = "Add Book";
+      loadBooks();
+    });
+  } else {
+    fetch(`${api}/books`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(data)
+    }).then(() => loadBooks());
+  }
+}
+
+/* ================= EDIT ================= */
+
+function editBook(id, name, auth, gen, pr) {
+  editId = id;
+
+  document.getElementById("bookName").value = name;
+  document.getElementById("author").value = auth;
+  document.getElementById("genre").value = gen;
+  document.getElementById("price").value = pr;
+
+  document.getElementById("bookBtn").innerText = "Update Book";
 }
 
 /* ================= DELETE ================= */
@@ -152,16 +177,5 @@ function deleteBook(id) {
     headers: {
       "Authorization": "Bearer " + token
     }
-  })
-    .then(() => loadBooks())
-    .catch(err => console.error(err));
+  }).then(() => loadBooks());
 }
-
-/* ================= AUTO LOAD ================= */
-
-window.onload = function () {
-  if (document.getElementById("bookList")) {
-    loadBooks();
-  }
-};
-
