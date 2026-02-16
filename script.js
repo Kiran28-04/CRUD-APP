@@ -246,73 +246,99 @@ function deleteBook(id) {
   });
 }
 
-/* ================= FORGOT PASSWORD ================= */
+/* ===== FORGOT PASSWORD ===== */
 
-async function sendResetLink() {
+function sendResetLink() {
   const email = getValue("resetEmail");
 
   if (!email) {
-    return Swal.fire("Error", "Enter your email", "error");
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Please enter your email"
+    });
+    return;
   }
 
-  showLoader();
+  fetch(`${api}/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  })
+  .then(async res => {
+    const message = await res.text();
 
-  try {
-    const res = await fetch(`${api}/forgot-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    });
-
-    const text = await res.text();
-    hideLoader();
-
-    if (res.ok) {
-      Swal.fire("Success", text, "success")
-        .then(() => window.location.href = "login.html");
-    } else {
-      Swal.fire("Error", text, "error");
+    if (!res.ok) {
+      throw new Error(message);
     }
 
-  } catch {
-    hideLoader();
-    Swal.fire("Error", "Server error", "error");
-  }
+    return message;
+  })
+  .then(message => {
+    Swal.fire({
+      icon: "success",
+      title: "Email Sent",
+      text: message
+    }).then(() => {
+      window.location.href = "login.html";
+    });
+  })
+  .catch(err => {
+    Swal.fire({
+      icon: "error",
+      title: "Failed",
+      text: err.message || "Email sending failed"
+    });
+  });
 }
 
-/* ================= RESET PASSWORD ================= */
 
-async function updatePassword() {
+/* ===== RESET PASSWORD ===== */
+
+function updatePassword() {
   const newPassword = getValue("newPassword");
+
+  if (!newPassword) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Enter new password"
+    });
+    return;
+  }
+
   const token = new URLSearchParams(window.location.search).get("token");
 
-  if (!newPassword || !token) {
-    return Swal.fire("Error", "Invalid request", "error");
-  }
+  fetch(`${api}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, newPassword })
+  })
+  .then(async res => {
+    const message = await res.text();
 
-  showLoader();
-
-  try {
-    const res = await fetch(`${api}/reset-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, newPassword })
-    });
-
-    const text = await res.text();
-    hideLoader();
-
-    if (res.ok) {
-      Swal.fire("Success", text, "success")
-        .then(() => window.location.href = "login.html");
-    } else {
-      Swal.fire("Error", text, "error");
+    if (!res.ok) {
+      throw new Error(message);
     }
 
-  } catch {
-    hideLoader();
-    Swal.fire("Error", "Invalid or expired link", "error");
-  }
+    return message;
+  })
+  .then(message => {
+    Swal.fire({
+      icon: "success",
+      title: "Success",
+      text: message
+    }).then(() => {
+      window.location.href = "login.html";
+    });
+  })
+  .catch(err => {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: err.message || "Invalid or expired link"
+    });
+  });
 }
 
 /* ================= HELPER ================= */
@@ -328,3 +354,4 @@ function clearForm() {
   document.getElementById("genre").value = "";
   document.getElementById("price").value = "";
 }
+
