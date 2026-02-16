@@ -164,3 +164,57 @@ a:hover {
   }
 }
 
+/* ================= TABLE IMPROVEMENT ================= */
+
+.table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table thead {
+  background: linear-gradient(90deg, #8B0000, #B22222);
+  color: white;
+}
+
+/* Edit Button */
+.edit-btn {
+  background: linear-gradient(45deg, #ffc107, #ff9800);
+  color: black;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.edit-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(255,193,7,0.6);
+}
+
+/* Delete Button */
+.delete-btn {
+  background: linear-gradient(45deg, #dc3545, #b71c1c);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.delete-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(220,53,69,0.6);
+}
+
+/* Glass card look */
+.container {
+  max-width: 650px;
+  background: rgba(0,0,0,0.7);
+  padding: 30px;
+  border-radius: 20px;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+
