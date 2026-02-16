@@ -302,3 +302,61 @@ function getValue(id) {
   const el = document.getElementById(id);
   return el ? el.value.trim() : "";
 }
+
+
+function forgotPassword() {
+  const email = getValue("forgotEmail");
+
+  if (!email) {
+    Swal.fire("Error", "Enter your email", "error");
+    return;
+  }
+
+  showLoader();
+
+  fetch(`${api}/forgot-password`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ email })
+  })
+  .then(res => res.text())
+  .then(msg => {
+    hideLoader();
+    Swal.fire("Success", msg, "success");
+  })
+  .catch(() => {
+    hideLoader();
+    Swal.fire("Error", "Server error", "error");
+  });
+}
+
+
+function resetPassword() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  const password = getValue("newPassword");
+
+  if (!password) {
+    Swal.fire("Error", "Enter new password", "error");
+    return;
+  }
+
+  showLoader();
+
+  fetch(`${api}/reset-password/${token}`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ password })
+  })
+  .then(res => res.text())
+  .then(msg => {
+    hideLoader();
+    Swal.fire("Success", msg, "success").then(() => {
+      window.location.href = "login.html";
+    });
+  })
+  .catch(() => {
+    hideLoader();
+    Swal.fire("Error", "Server error", "error");
+  });
+}
