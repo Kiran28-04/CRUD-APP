@@ -11,10 +11,12 @@
 <div class="container mt-5">
   <h2 class="text-center">Login</h2>
 
-  <input class="form-control mb-2" id="loginEmail" placeholder="Email">
-  <input type="password" class="form-control mb-3" id="loginPassword" placeholder="Password">
+  <form id="loginForm">
+    <input type="email" class="form-control mb-2" id="loginEmail" placeholder="Email" required>
+    <input type="password" class="form-control mb-3" id="loginPassword" placeholder="Password" required>
 
-  <button class="btn btn-success w-100" onclick="login()">Login</button>
+    <button type="submit" class="btn btn-success w-100">Login</button>
+  </form>
 
   <p class="text-center mt-3">
     <a href="forgot.html">Forgot Password?</a>
