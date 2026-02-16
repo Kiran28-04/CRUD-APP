@@ -316,19 +316,27 @@ function forgotPassword() {
 
   fetch(`${api}/forgot-password`, {
     method: "POST",
-    headers: {"Content-Type":"application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email })
   })
-  .then(res => res.text())
-  .then(msg => {
-    hideLoader();
-    Swal.fire("Success", msg, "success");
-  })
-  .catch(() => {
-    hideLoader();
-    Swal.fire("Error", "Server error", "error");
-  });
+    .then(res => res.text())
+    .then(msg => {
+      hideLoader();
+
+      Swal.fire({
+        title: "Success",
+        text: msg,
+        icon: "success"
+      }).then(() => {
+        window.location.href = "login.html";   // 🔥 Redirect after message
+      });
+    })
+    .catch(() => {
+      hideLoader();
+      Swal.fire("Error", "Server error", "error");
+    });
 }
+
 
 
 function resetPassword() {
@@ -360,3 +368,4 @@ function resetPassword() {
     Swal.fire("Error", "Server error", "error");
   });
 }
+
