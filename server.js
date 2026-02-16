@@ -12,23 +12,26 @@ const authMiddleware = require("./middleware/auth");
 
 const app = express();
 
-/* ===== FINAL CORS CONFIG ===== */
+/* ================= CORS CONFIG ================= */
+
 app.use(cors({
-  origin: "*",
+  origin: "*", // for production you can restrict to your github URL
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-/* ===== MongoDB ===== */
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log("MongoDB Error:", err));
+/* ================= MONGODB ================= */
 
-/* ===== REGISTER ===== */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log("❌ MongoDB Error:", err));
+
+/* ================= REGISTER ================= */
+
 app.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -41,11 +44,13 @@ app.post("/register", async (req, res) => {
 
     res.send("Registration successful");
   } catch (err) {
+    console.log("REGISTER ERROR:", err);
     res.status(500).send("Server error");
   }
 });
 
-/* ===== LOGIN ===== */
+/* ================= LOGIN ================= */
+
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -65,11 +70,13 @@ app.post("/login", async (req, res) => {
     res.json({ token, name: user.name });
 
   } catch (err) {
+    console.log("LOGIN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ===== FORGOT PASSWORD ===== */
+/* ================= FORGOT PASSWORD ================= */
+
 app.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -86,34 +93,44 @@ app.post("/forgot-password", async (req, res) => {
     const resetLink =
       `https://kiran28-04.github.io/CRUD-APP/reset.html?token=${token}`;
 
+    /* ===== STABLE GMAIL TRANSPORTER ===== */
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
       }
     });
 
+    /* ===== VERIFY CONNECTION ===== */
+    await transporter.verify();
+
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"Books App" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Password Reset Link",
+      subject: "Password Reset",
       html: `
-        <h3>Password Reset</h3>
-        <p>Click below to reset password:</p>
-        <a href="${resetLink}">${resetLink}</a>
+        <h2>Password Reset</h2>
+        <p>Click below to reset your password:</p>
+        <a href="${resetLink}" style="color:blue;">
+          Reset Password
+        </a>
+        <p>This link expires in 15 minutes.</p>
       `
     });
 
     res.send("Reset link sent successfully");
 
   } catch (err) {
-    console.log(err);
+    console.log("FORGOT PASSWORD ERROR:", err);
     res.status(500).send("Email sending failed");
   }
 });
 
-/* ===== RESET PASSWORD ===== */
+/* ================= RESET PASSWORD ================= */
+
 app.post("/reset-password", async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -129,35 +146,61 @@ app.post("/reset-password", async (req, res) => {
     res.send("Password updated successfully");
 
   } catch (err) {
+    console.log("RESET ERROR:", err);
     res.status(400).send("Invalid or expired token");
   }
 });
 
-/* ===== BOOK ROUTES ===== */
+/* ================= BOOK ROUTES ================= */
 
 app.post("/books", authMiddleware, async (req, res) => {
-  await new Book(req.body).save();
-  res.send("Book added");
+  try {
+    await new Book(req.body).save();
+    res.send("Book added");
+  } catch (err) {
+    console.log("ADD BOOK ERROR:", err);
+    res.status(500).send("Server error");
+  }
 });
 
 app.get("/books", authMiddleware, async (req, res) => {
-  const books = await Book.find();
-  res.json(books);
+  try {
+    const books = await Book.find();
+    res.json(books);
+  } catch (err) {
+    console.log("GET BOOKS ERROR:", err);
+    res.status(500).send("Server error");
+  }
 });
 
 app.put("/books/:id", authMiddleware, async (req, res) => {
-  await Book.findByIdAndUpdate(req.params.id, req.body);
-  res.send("Updated");
+  try {
+    await Book.findByIdAndUpdate(req.params.id, req.body);
+    res.send("Updated");
+  } catch (err) {
+    console.log("UPDATE ERROR:", err);
+    res.status(500).send("Server error");
+  }
 });
 
 app.delete("/books/:id", authMiddleware, async (req, res) => {
-  await Book.findByIdAndDelete(req.params.id);
-  res.send("Deleted");
+  try {
+    await Book.findByIdAndDelete(req.params.id);
+    res.send("Deleted");
+  } catch (err) {
+    console.log("DELETE ERROR:", err);
+    res.status(500).send("Server error");
+  }
 });
+
+/* ================= ROOT ================= */
 
 app.get("/", (req, res) => {
   res.send("CRUD API is running 🚀");
 });
 
-app.listen(PORT, () => console.log("Server running on port", PORT));
+/* ================= START SERVER ================= */
 
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
