@@ -1,3 +1,5 @@
+const api = "https://crud-app-5v1l.onrender.com";
+
 /* REGISTER */
 function register(){
 fetch(`${api}/register`,{
@@ -91,3 +93,4 @@ headers:{
 })
 .then(loadBooks);
 }
+
